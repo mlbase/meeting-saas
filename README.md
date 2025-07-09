@@ -41,3 +41,69 @@ The presentation layer handles HTTP requests and responses, and converts between
 - **Maintainability**: Changes in one layer don't affect other layers as long as the interfaces remain the same.
 - **Testability**: Each layer can be tested independently.
 - **Flexibility**: Different implementations of a layer can be swapped without affecting other layers.
+
+## GitHub Actions and Secrets
+
+This project uses GitHub Actions for CI/CD. The workflow is defined in `.github/workflows/main.yml`.
+
+### Setting Up GitHub Secrets
+
+To use the CI/CD pipeline, you need to set up the following GitHub Secrets in your repository:
+
+1. Go to your GitHub repository
+2. Click on "Settings" > "Secrets and variables" > "Actions"
+3. Click on "New repository secret"
+4. Add the following secrets:
+
+| Secret Name | Description |
+|-------------|-------------|
+| `API_KEY` | API key for external services |
+| `DATABASE_PASSWORD` | Password for database access |
+| `DOCKER_USERNAME` | Docker Hub username for publishing images |
+| `DOCKER_PASSWORD` | Docker Hub password or access token |
+| `REDIS_PASSWORD` | Password for Redis authentication |
+
+### How Secrets are Used
+
+GitHub Secrets are encrypted environment variables that are only exposed to selected GitHub Actions workflows. In our workflow, secrets are used for:
+
+- Authenticating with external services
+- Connecting to databases
+- Logging in to Docker Hub for image publishing
+- Securing Redis with password authentication
+
+Secrets are referenced in the workflow using the syntax: `${{ secrets.SECRET_NAME }}`
+
+**Important**: Never print secrets in logs or expose them in any way in your workflows.
+
+### Local Development with Secrets
+
+For local development, you can create a `.env` file in the project root with the same secrets used in GitHub Actions:
+
+```
+API_KEY=your_api_key_here
+DATABASE_PASSWORD=your_database_password_here
+REDIS_PASSWORD=your_redis_password_here
+```
+
+This file should be added to `.gitignore` to prevent it from being committed to the repository.
+
+To use the `.env` file with Docker Compose:
+
+```bash
+# Load environment variables from .env file
+docker-compose --env-file .env -f compose.yaml up -d
+```
+
+For running the application locally without Docker:
+
+```bash
+# Export environment variables (Linux/macOS)
+export $(cat .env | xargs)
+
+# Or for Windows PowerShell
+Get-Content .env | ForEach-Object { $var = $_.Split('=', 2); if ($var[0] -and $var[1]) { [Environment]::SetEnvironmentVariable($var[0], $var[1]) } }
+
+# Then run the application
+./gradlew bootRun
+```
