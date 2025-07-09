@@ -45,6 +45,11 @@ spring:
   jooq:
     sql-dialect: H2
 
+  # Spring AI Configuration
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:your-api-key-here}
+
 # Logging Configuration
 logging:
   level:
