@@ -4,7 +4,8 @@ data class Participant(
     val name: String,
     val role: String,
     val department: String,
-    val email: String? = null
+    val email: String? = null,
+    val password: String? = null
 )
 
 data class VoiceProfile(

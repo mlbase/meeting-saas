@@ -4,21 +4,21 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "voice_profiles")
-data class VoiceProfile(
+@Table(name = "companies")
+data class Company(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     
-    @Column(name = "user_id", nullable = false, unique = true)
-    val userId: Long,
-    
-    @Column(name = "voice_characteristics", columnDefinition = "TEXT")
-    val voiceCharacteristics: String,
+    @Column(nullable = false)
+    val name: String,
     
     @Column(name = "created_at")
     val createdAt: LocalDateTime = LocalDateTime.now(),
     
     @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
+    val updatedAt: LocalDateTime = LocalDateTime.now(),
+    
+    @Column(name = "is_active")
+    val isActive: Boolean = true
 )

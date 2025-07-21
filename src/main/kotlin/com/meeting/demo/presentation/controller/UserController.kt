@@ -1,87 +1,119 @@
-package com.meeting.demo.presentation.controller
+package com.meeting.demo.controller
 
-import com.meeting.demo.domain.model.User
-import com.meeting.demo.domain.service.UserService
-import com.meeting.demo.presentation.dto.UserDto
-import org.springframework.http.HttpStatus
+import com.meeting.demo.model.Participant
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
-/**
- * REST controller for handling User-related HTTP requests.
- */
 @RestController
-@RequestMapping("/api/users")
-class UserController(private val userService: UserService) {
+@RequestMapping("/users")
+class UserController {
 
-    /**
-     * Get a user by their ID.
-     *
-     * @param id The ID of the user to retrieve
-     * @return The user DTO if found, or a 404 response if not found
-     */
-    @GetMapping("/{id}")
-    fun getUserById(@PathVariable id: Long): ResponseEntity<UserDto> {
-        val user = userService.getUserById(id)
+    // In-memory storage for demo purposes
+    private val users = mutableListOf<Participant>()
+
+    @PostMapping
+    fun createUser(@RequestBody userData: UserRegistrationRequest): ResponseEntity<UserRegistrationResponse> {
+        try {
+            // Create new participant from registration data
+            val participant = Participant(
+                name = userData.name,
+                email = userData.email,
+                role = userData.role,
+                department = userData.department
+            )
+
+            // Check if user already exists
+            if (users.any { it.email == userData.email }) {
+                return ResponseEntity.badRequest().body(
+                    UserRegistrationResponse(
+                        success = false,
+                        message = "User with this email already exists",
+                        userId = null
+                    )
+                )
+            }
+
+            // Add user to storage
+            users.add(participant)
+
+            return ResponseEntity.ok(
+                UserRegistrationResponse(
+                    success = true,
+                    message = "User registered successfully",
+                    userId = participant.email // Using email as ID for now
+                )
+            )
+
+        } catch (e: Exception) {
+            return ResponseEntity.badRequest().body(
+                UserRegistrationResponse(
+                    success = false,
+                    message = "Registration failed: ${e.message}",
+                    userId = null
+                )
+            )
+        }
+    }
+
+    @GetMapping
+    fun getAllUsers(): ResponseEntity<List<Participant>> {
+        return ResponseEntity.ok(users)
+    }
+
+    @GetMapping("/{email}")
+    fun getUserByEmail(@PathVariable email: String): ResponseEntity<Participant> {
+        val user = users.find { it.email == email }
         return if (user != null) {
-            ResponseEntity.ok(UserDto.fromUser(user))
+            ResponseEntity.ok(user)
         } else {
             ResponseEntity.notFound().build()
         }
     }
 
-    /**
-     * Get all users.
-     *
-     * @return A list of all user DTOs
-     */
-    @GetMapping
-    fun getAllUsers(): ResponseEntity<List<UserDto>> {
-        val users = userService.getAllUsers()
-        return ResponseEntity.ok(UserDto.fromUsers(users))
-    }
-
-    /**
-     * Create a new user.
-     *
-     * @param userDto The user DTO to create
-     * @return The created user DTO with a 201 Created status
-     */
-    @PostMapping
-    fun createUser(@RequestBody userDto: UserDto): ResponseEntity<UserDto> {
-        val savedUser = userService.saveUser(userDto.toUser())
-        return ResponseEntity.status(HttpStatus.CREATED).body(UserDto.fromUser(savedUser))
-    }
-
-    /**
-     * Update an existing user.
-     *
-     * @param id The ID of the user to update
-     * @param userDto The updated user DTO data
-     * @return The updated user DTO, or a 404 response if the user was not found
-     */
-    @PutMapping("/{id}")
-    fun updateUser(@PathVariable id: Long, @RequestBody userDto: UserDto): ResponseEntity<UserDto> {
-        // Check if user exists
-        if (userService.getUserById(id) == null) {
-            return ResponseEntity.notFound().build()
+    @PostMapping("/login")
+    fun loginUser(@RequestBody loginData: UserLoginRequest): ResponseEntity<UserLoginResponse> {
+        val user = users.find { it.email == loginData.email && it.password == loginData.password }
+        return if (user != null) {
+            ResponseEntity.ok(
+                UserLoginResponse(
+                    success = true,
+                    message = "Login successful",
+                    userId = user.email // Using email as ID for now
+                )
+            )
+        } else {
+            ResponseEntity.status(401).body(
+                UserLoginResponse(
+                    success = false,
+                    message = "Invalid email or role",
+                    userId = null
+                )
+            )
         }
-
-        // Ensure the ID in the path matches the ID in the user object
-        val userToUpdate = userDto.toUser().copy(id = id)
-        val updatedUser = userService.saveUser(userToUpdate)
-        return ResponseEntity.ok(UserDto.fromUser(updatedUser))
-    }
-
-    /**
-     * Delete a user.
-     *
-     * @param id The ID of the user to delete
-     * @return A 204 No Content response
-     */
-    @DeleteMapping("/{id}")
-    fun deleteUser(@PathVariable id: Long): ResponseEntity<Void> {
-        userService.deleteUser(id)
-        return ResponseEntity.noContent().build()
     }
 }
+
+data class UserRegistrationRequest(
+    val name: String,
+    val email: String,
+    val department: String,
+    val role: String,
+    val password: String
+)
+
+data class UserRegistrationResponse(
+    val success: Boolean,
+    val message: String,
+    val userId: String?
+)
+
+data class UserLoginRequest(
+    val email: String,
+    val password: String
+)
+
+data class UserLoginResponse(
+    val success: Boolean,
+    val message: String,
+    val userId: String?
+)
