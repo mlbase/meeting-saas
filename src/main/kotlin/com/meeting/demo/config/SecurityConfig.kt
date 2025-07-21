@@ -23,6 +23,11 @@ class SecurityConfig {
                     .requestMatchers("/users").permitAll()
                     .requestMatchers("/users/**").permitAll()
                     
+                    // Allow access to API endpoints
+                    .requestMatchers("/api/users").permitAll()
+                    .requestMatchers("/api/users/**").permitAll()
+                    .requestMatchers("/api/chat/**").permitAll()
+                    
                     // Allow access to static resources
                     .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**").permitAll()
                     

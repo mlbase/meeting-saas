@@ -1,25 +1,31 @@
 package com.meeting.demo.controller
 
-import com.meeting.demo.model.Participant
+import com.meeting.demo.model.UserData
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
+import java.lang.Math.random
+
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 class UserController {
 
     // In-memory storage for demo purposes
-    private val users = mutableListOf<Participant>()
+    private val users = mutableListOf<UserData>()
 
     @PostMapping
     fun createUser(@RequestBody userData: UserRegistrationRequest): ResponseEntity<UserRegistrationResponse> {
         try {
-            // Create new participant from registration data
-            val participant = Participant(
-                name = userData.name,
+            // Create new UserData from registration data
+            val createdUser = UserData(
+                id = random().toLong(),
+                username = userData.name,
                 email = userData.email,
-                role = userData.role,
-                department = userData.department
+                firstName = userData.name.split(" ").getOrNull(0) ?: userData.name,
+                lastName = userData.name.split(" ").getOrNull(1) ?: "",
+                isActive = true,
+                password = userData.password,
+                roles = listOf(userData.role)
             )
 
             // Check if user already exists
@@ -34,13 +40,13 @@ class UserController {
             }
 
             // Add user to storage
-            users.add(participant)
+            users.add(createdUser)
 
             return ResponseEntity.ok(
                 UserRegistrationResponse(
                     success = true,
                     message = "User registered successfully",
-                    userId = participant.email // Using email as ID for now
+                    userId = createdUser.id // Using email as ID for now
                 )
             )
 
@@ -56,17 +62,27 @@ class UserController {
     }
 
     @GetMapping
-    fun getAllUsers(): ResponseEntity<List<Participant>> {
+    fun getAllUsers(): ResponseEntity<List<UserData>> {
         return ResponseEntity.ok(users)
     }
 
-    @GetMapping("/{email}")
-    fun getUserByEmail(@PathVariable email: String): ResponseEntity<Participant> {
-        val user = users.find { it.email == email }
+    @GetMapping("/{id}")
+    fun getUserById(@PathVariable id: Long): ResponseEntity<UserData> {
+        val user = users.find { it.id == id }
         return if (user != null) {
             ResponseEntity.ok(user)
         } else {
             ResponseEntity.notFound().build()
+        }
+    }
+
+    @PostMapping("/check/{email}")
+    fun getUserByEmail(@PathVariable email: String): ResponseEntity<UserData> {
+        val user = users.find { it.email == email }
+        return if (user != null) {
+            ResponseEntity.ok(user)
+        } else {
+            ResponseEntity.badRequest().build()
         }
     }
 
@@ -78,7 +94,7 @@ class UserController {
                 UserLoginResponse(
                     success = true,
                     message = "Login successful",
-                    userId = user.email // Using email as ID for now
+                    userId = user.id // Using email as ID for now
                 )
             )
         } else {
@@ -90,6 +106,12 @@ class UserController {
                 )
             )
         }
+    }
+
+    @DeleteMapping("")
+    fun deleteAllUsers(): ResponseEntity<String> {
+        users.clear()
+        return ResponseEntity.ok("All users deleted successfully")
     }
 }
 
@@ -104,7 +126,7 @@ data class UserRegistrationRequest(
 data class UserRegistrationResponse(
     val success: Boolean,
     val message: String,
-    val userId: String?
+    val userId: Long? = null
 )
 
 data class UserLoginRequest(
@@ -115,5 +137,5 @@ data class UserLoginRequest(
 data class UserLoginResponse(
     val success: Boolean,
     val message: String,
-    val userId: String?
+    val userId: Long?,
 )

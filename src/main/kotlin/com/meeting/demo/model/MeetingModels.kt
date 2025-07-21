@@ -1,11 +1,24 @@
 package com.meeting.demo.model
 
 data class Participant(
+    val id: Long? = null,
     val name: String,
     val role: String,
     val department: String,
     val email: String? = null,
     val password: String? = null
+)
+
+data class UserData(
+    val id: Long? = null,
+    val username: String,
+    val password: String,
+    val email: String,
+    val firstName: String,
+    val lastName: String,
+    val isActive: Boolean = true,
+    val roles: List<String> = listOf(),
+    val companyId: Long? = null
 )
 
 data class VoiceProfile(

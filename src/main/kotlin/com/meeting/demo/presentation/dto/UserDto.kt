@@ -9,6 +9,7 @@ import com.meeting.demo.domain.model.User
 data class UserDto(
     val id: Long? = null,
     val username: String,
+    val password: String? = null, // Password is optional for DTOs, as it may not be needed in all contexts
     val email: String,
     val firstName: String,
     val lastName: String,
@@ -52,6 +53,7 @@ data class UserDto(
         return User(
             id = this.id,
             username = this.username,
+            password = this.password ?: "", // Password should not be null in the User model
             email = this.email,
             firstName = this.firstName,
             lastName = this.lastName
