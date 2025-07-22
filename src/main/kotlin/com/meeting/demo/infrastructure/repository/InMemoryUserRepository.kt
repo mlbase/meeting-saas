@@ -26,13 +26,24 @@ class InMemoryUserRepository : UserRepository {
     }
     
     override fun save(user: User): User {
-        val userId = user.id ?: idCounter.getAndIncrement()
-        val savedUser = user.copy(id = userId)
-        users[userId] = savedUser
-        return savedUser
+        if (user.id == null) {
+            // Generate new ID and set it on the user
+            val newId = idCounter.getAndIncrement()
+            user.id = newId
+        }
+        users[user.id!!] = user
+        return user
+    }
+
+    override fun findByEmail(email: String): User? {
+        return users.values.find { it.email.value == email }
     }
     
     override fun deleteById(id: Long) {
         users.remove(id)
+    }
+    
+    override fun deleteAll() {
+        users.clear()
     }
 }
