@@ -173,7 +173,7 @@
             <p>Sign in to your account</p>
         </div>
         
-        <form class="login-form" th:action="@{/login}" method="post">
+        <form class="login-form" id="loginForm">
             <!-- Display error message if login fails -->
             <div th:if="${param.error}" class="error-message">
                 Invalid username or password.
@@ -185,8 +185,8 @@
             </div>
             
             <div class="form-group">
-                <label for="username">Email Address</label>
-                <input type="email" id="username" name="username" placeholder="Enter your email" required>
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
             </div>
             
             <div class="form-group">
@@ -201,5 +201,89 @@
             </div>
         </form>
     </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            loginUser(email, password);
+        });
+        
+        async function loginUser(email, password) {
+            const submitBtn = document.querySelector('.login-btn');
+            const originalBtnText = submitBtn.textContent;
+            
+            // Show loading state
+            submitBtn.textContent = 'Signing In...';
+            submitBtn.disabled = true;
+            
+            // Remove any existing error/success messages
+            removeMessage();
+            
+            try {
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message
+                    showSuccessMessage('Login successful! Welcome back.');
+                    
+                    // Redirect to dashboard after 1 second
+                    setTimeout(() => {
+                        window.location.href = '/page/dashboard';
+                    }, 1000);
+                    
+                } else {
+                    // Show error message
+                    showErrorMessage(result.message || 'Login failed. Please try again.');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showErrorMessage('Network error. Please check your connection and try again.');
+            } finally {
+                // Reset button state
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        function showSuccessMessage(message) {
+            const form = document.querySelector('.login-form');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'success-message';
+            messageDiv.textContent = message;
+            form.insertBefore(messageDiv, form.firstElementChild);
+        }
+        
+        function showErrorMessage(message) {
+            const form = document.querySelector('.login-form');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'error-message';
+            messageDiv.textContent = message;
+            form.insertBefore(messageDiv, form.firstElementChild);
+        }
+        
+        function removeMessage() {
+            const existingMessages = document.querySelectorAll('.error-message, .success-message');
+            existingMessages.forEach(msg => {
+                if (!msg.hasAttribute('th:if')) { // Don't remove Thymeleaf messages
+                    msg.remove();
+                }
+            });
+        }
+    </script>
 </body>
 </html>
