@@ -16,7 +16,7 @@ spring:
       pool-name: HikariCP
       max-lifetime: 2000000
       connection-timeout: 30000
-  
+
   # H2 Console Configuration
   h2:
     console:
@@ -32,6 +32,14 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          time_zone: UTC
+    defer-datasource-initialization: true
+  
+  # SQL initialization disabled - using @PostConstruct instead
+  sql:
+    init:
+      mode: never
   
   # Redis Configuration
   data:
@@ -40,6 +48,13 @@ spring:
       port: 6379
       timeout: 2000
       database: 0
+
+  # Session Configuration
+  session:
+    store-type: redis
+    redis:
+      namespace: spring:session
+    timeout: 1800 # 30 minutes
 
   # jOOQ Configuration
   jooq:
