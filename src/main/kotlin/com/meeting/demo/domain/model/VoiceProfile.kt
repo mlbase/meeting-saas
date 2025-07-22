@@ -1,11 +1,10 @@
 package com.meeting.demo.domain.model
 
 import jakarta.persistence.*
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "voice_profiles")
-data class VoiceProfile(
+class VoiceProfile(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -14,11 +13,5 @@ data class VoiceProfile(
     val userId: Long,
     
     @Column(name = "voice_characteristics", columnDefinition = "TEXT")
-    val voiceCharacteristics: String,
-    
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-    
-    @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
-)
+    val voiceCharacteristics: String
+) : BaseEntity()

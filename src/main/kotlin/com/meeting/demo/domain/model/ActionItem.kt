@@ -1,11 +1,10 @@
 package com.meeting.demo.domain.model
 
 import jakarta.persistence.*
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "action_items")
-data class ActionItem(
+class ActionItem(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -23,11 +22,5 @@ data class ActionItem(
     val isConfirmed: Boolean = false,
     
     @Column(name = "assignee_user_id")
-    val assigneeUserId: Long? = null,
-    
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-    
-    @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
-)
+    val assigneeUserId: Long? = null
+) : BaseEntity()

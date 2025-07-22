@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "meetings")
-data class Meeting(
+class Meeting(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -26,14 +26,8 @@ data class Meeting(
     val endTime: LocalDateTime? = null,
     
     @Enumerated(EnumType.STRING)
-    val status: MeetingStatus = MeetingStatus.SCHEDULED,
-    
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-    
-    @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
-)
+    val status: MeetingStatus = MeetingStatus.SCHEDULED
+) : BaseEntity()
 
 enum class MeetingStatus {
     SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED

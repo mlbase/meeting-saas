@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "participants")
-data class Participant(
+class Participant(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -21,4 +21,4 @@ data class Participant(
     
     @Column(name = "left_at")
     val leftAt: LocalDateTime? = null
-)
+) : BaseEntity()
