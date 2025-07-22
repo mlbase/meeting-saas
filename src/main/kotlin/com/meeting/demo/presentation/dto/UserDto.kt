@@ -1,6 +1,8 @@
 package com.meeting.demo.presentation.dto
 
 import com.meeting.demo.domain.model.User
+import com.meeting.demo.domain.vo.Email
+import java.io.Serializable
 
 /**
  * Data Transfer Object for User entity.
@@ -14,7 +16,7 @@ data class UserDto(
     val firstName: String,
     val lastName: String,
     val fullName: String
-) {
+) : Serializable {
     companion object {
         /**
          * Convert a User domain model to a UserDto.
@@ -26,7 +28,7 @@ data class UserDto(
             return UserDto(
                 id = user.id,
                 username = user.username,
-                email = user.email,
+                email = user.email.value,
                 firstName = user.firstName,
                 lastName = user.lastName,
                 fullName = "${user.firstName} ${user.lastName}"
@@ -46,17 +48,19 @@ data class UserDto(
     
     /**
      * Convert this UserDto to a User domain model.
+     * Note: This method requires a password. For DTOs without passwords, 
+     * consider using User.create() factory method instead.
      *
      * @return The corresponding User domain model
      */
     fun toUser(): User {
-        return User(
-            id = this.id,
+        val passwordValue = this.password ?: throw IllegalArgumentException("Password is required to create User domain model")
+        return User.create(
             username = this.username,
-            password = this.password ?: "", // Password should not be null in the User model
             email = this.email,
             firstName = this.firstName,
-            lastName = this.lastName
+            lastName = this.lastName,
+            password = passwordValue
         )
     }
 }

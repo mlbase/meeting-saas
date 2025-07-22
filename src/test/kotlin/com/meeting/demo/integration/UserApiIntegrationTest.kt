@@ -1,8 +1,6 @@
 package com.meeting.demo.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.meeting.demo.domain.model.User
-import com.meeting.demo.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -10,7 +8,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-import java.time.LocalDateTime
 
 class UserApiIntegrationTest : BaseIntegrationTest() {
 
@@ -20,8 +17,6 @@ class UserApiIntegrationTest : BaseIntegrationTest() {
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
-    @Autowired
-    private lateinit var userRepository: UserRepository
 
     @BeforeEach
     fun setUp() {
@@ -34,7 +29,7 @@ class UserApiIntegrationTest : BaseIntegrationTest() {
             "email" to "john.doe@example.com",
             "department" to "Engineering",
             "role" to "Developer",
-            "password" to "password123"
+            "password" to "Password123!"
         )
 
         mockMvc.perform(
@@ -110,6 +105,7 @@ class UserApiIntegrationTest : BaseIntegrationTest() {
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.message").value("Login successful"))
             .andExpect(jsonPath("$.userId").isNumber())
+            .andExpect(jsonPath("$.sessionId").isString)
     }
 
     @Test
@@ -126,7 +122,7 @@ class UserApiIntegrationTest : BaseIntegrationTest() {
         )
             .andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.success").value(false))
-            .andExpect(jsonPath("$.message").value("Invalid email or role"))
+            .andExpect(jsonPath("$.message").value("Invalid email or password"))
     }
 
     @Test
@@ -163,16 +159,18 @@ class UserApiIntegrationTest : BaseIntegrationTest() {
                 .content(objectMapper.writeValueAsString(user2Request))
         )
 
-        // Get all users
+        // Get all users - should have exactly 2 after delete and create
         mockMvc.perform(get("/api/users"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[0].email").exists())
             .andExpect(jsonPath("$[1].email").exists())
+            .andExpect(jsonPath("$[0].username").exists())
+            .andExpect(jsonPath("$[1].username").exists())
     }
 
     @Test
-    fun `GET api users by email - should return user when exists`() {
+    fun `GET api users by email - should return 400 when email exists`() {
         // Create user first
         val userRequest = mapOf(
             "name" to "Find Me",
@@ -188,14 +186,112 @@ class UserApiIntegrationTest : BaseIntegrationTest() {
                 .content(objectMapper.writeValueAsString(userRequest))
         )
 
-        // Find user by email
+        // Check email availability - should return 400 when email is taken
         mockMvc.perform(post("/api/users/check/findme@example.com"))
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `GET api users by email - should return 200 when email available`() {
+        // Check email availability - should return 200 when email is available
+        mockMvc.perform(post("/api/users/check/notfound@example.com"))
             .andExpect(status().isOk)
     }
 
     @Test
-    fun `GET api users by email - should return 404 when user not found`() {
-        mockMvc.perform(post("/api/users/check/notfound@example.com"))
-            .andExpect(status().isBadRequest)
+    fun `POST api users logout - should logout user successfully`() {
+        // First create and login a user
+        val userRequest = mapOf(
+            "name" to "Logout Test User",
+            "email" to "logout@example.com",
+            "department" to "IT",
+            "role" to "Developer",
+            "password" to "password123"
+        )
+
+        mockMvc.perform(
+            post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userRequest))
+        )
+
+        val loginRequest = mapOf(
+            "email" to "logout@example.com",
+            "password" to "password123"
+        )
+
+        val loginResult = mockMvc.perform(
+            post("/api/users/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))
+        )
+            .andExpect(status().isOk)
+            .andReturn()
+
+        // Extract session ID from the X-Auth-Token header
+        val sessionId = loginResult.response.getHeader("X-Auth-Token")
+
+        // Perform logout with the same session ID via header
+        mockMvc.perform(
+            post("/api/users/logout")
+                .header("X-Auth-Token", sessionId)
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.message").value("Logout successful"))
+    }
+
+    @Test
+    fun `GET api users session - should return current user session`() {
+        // First create and login a user
+        val userRequest = mapOf(
+            "name" to "Session Test User",
+            "email" to "session@example.com",
+            "department" to "IT",
+            "role" to "Developer",
+            "password" to "password123"
+        )
+
+        mockMvc.perform(
+            post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userRequest))
+        )
+
+        val loginRequest = mapOf(
+            "email" to "session@example.com",
+            "password" to "password123"
+        )
+
+        val loginResult = mockMvc.perform(
+            post("/api/users/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest))
+        )
+            .andExpect(status().isOk)
+            .andReturn()
+
+        // Extract session ID from the X-Auth-Token header
+        val sessionId = loginResult.response.getHeader("X-Auth-Token")
+
+        // Check current session with the session ID via header
+        mockMvc.perform(
+            get("/api/users/session")
+                .header("X-Auth-Token", sessionId)
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.authenticated").value(true))
+            .andExpect(jsonPath("$.user").exists())
+            .andExpect(jsonPath("$.user.email").value("session@example.com"))
+            .andExpect(jsonPath("$.loginTime").isNumber)
+    }
+
+    @Test
+    fun `GET api users session - should return 401 when no session`() {
+        // Check session without login
+        mockMvc.perform(get("/api/users/session"))
+            .andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.authenticated").value(false))
+            .andExpect(jsonPath("$.message").value("No active session"))
     }
 }

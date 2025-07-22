@@ -1,23 +1,24 @@
 package com.meeting.demo.domain.model
 
+import com.meeting.demo.domain.vo.Email
+import com.meeting.demo.domain.vo.Password
 import jakarta.persistence.*
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "users")
-data class User(
+class User(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    var id: Long? = null,
     
     @Column(unique = true, nullable = false)
     val username: String,
     
-    @Column(nullable = false)
-    val password: String,
+    @Embedded
+    val password: Password,
     
-    @Column(unique = true, nullable = false)
-    val email: String,
+    @Embedded
+    val email: Email,
     
     @Column(name = "first_name")
     val firstName: String,
@@ -25,11 +26,6 @@ data class User(
     @Column(name = "last_name")
     val lastName: String,
     
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-    
-    @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now(),
     
     @Column(name = "is_active")
     val isActive: Boolean = true,
@@ -38,4 +34,37 @@ data class User(
     
     @Column(name = "company_id")
     val companyId: Long? = null
-)
+) : BaseEntity() {
+    fun isCompanyAdmin(): Boolean {
+        return roles?.contains("ROLE_COMPANY_ADMIN") ?: false
+    }
+    
+    /**
+     * Verify if the given plain text password matches the user's password
+     */
+    fun verifyPassword(plainTextPassword: String): Boolean {
+        return password.matches(plainTextPassword)
+    }
+
+    companion object {
+        fun create(
+            username: String,
+            email: String,
+            firstName: String,
+            lastName: String,
+            password: String,
+            roles: String? = null,
+            companyId: Long? = null
+        ): User {
+            return User(
+                username = username,
+                email = Email(email),
+                firstName = firstName,
+                lastName = lastName,
+                password = Password.create(password),
+                roles = roles,
+                companyId = companyId
+            )
+        }
+    }
+}
