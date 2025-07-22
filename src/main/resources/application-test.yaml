@@ -1,0 +1,35 @@
+spring:
+  # Test Database Configuration
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+
+  # JPA Test Configuration
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: false
+  
+  # Disable SQL initialization for tests
+  sql:
+    init:
+      mode: never
+
+  # Spring AI Test Configuration
+  ai:
+    openai:
+      api-key: test-key
+
+# Test Logging Configuration
+logging:
+  level:
+    com.meeting.demo: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
