@@ -15,35 +15,48 @@ class User(
     val username: String,
     
     @Embedded
-    val password: Password,
+    var password: Password,
     
     @Embedded
-    val email: Email,
+    var email: Email,
     
     @Column(name = "first_name")
-    val firstName: String,
+    var firstName: String,
     
     @Column(name = "last_name")
-    val lastName: String,
+    var lastName: String,
     
     
     @Column(name = "is_active")
-    val isActive: Boolean = true,
+    var isActive: Boolean = true,
     
-    val roles: String? = null,
+    var roles: String? = null,
+
+    var status: UserStatus = UserStatus.AVAILABLE,
     
     @Column(name = "company_id")
     val companyId: Long? = null
 ) : BaseEntity() {
-    fun isCompanyAdmin(): Boolean {
-        return roles?.contains("ROLE_COMPANY_ADMIN") ?: false
-    }
+    fun isCompanyAdmin(): Boolean = roles?.contains("ROLE_COMPANY_ADMIN") ?: false
+    fun isCLevel(): Boolean = roles?.contains("C_LEVEL") ?: false
+    fun isPlanning(): Boolean = status == UserStatus.PLANNING
     
     /**
      * Verify if the given plain text password matches the user's password
      */
     fun verifyPassword(plainTextPassword: String): Boolean {
         return password.matches(plainTextPassword)
+    }
+
+    fun changeStatus(newStatus: UserStatus) {
+        val allowed = mapOf(
+            UserStatus.AVAILABLE to setOf(UserStatus.PLANNING),
+            UserStatus.PLANNING  to setOf(UserStatus.WORKING),
+            UserStatus.WORKING   to setOf(UserStatus.AVAILABLE)
+        )
+        if (newStatus !in (allowed[status] ?: emptySet()))
+            throw IllegalStateException("$status 상태에서 $newStatus 로 전환할 수 없습니다.")
+        status = newStatus
     }
 
     companion object {
@@ -67,4 +80,12 @@ class User(
             )
         }
     }
+}
+
+enum class UserRole {
+    USER, C_LEVEL, ADMIN
+}
+
+enum class UserStatus {
+    PLANNING, WORKING, AVAILABLE, PTO, EXPIRED
 }

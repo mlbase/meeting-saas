@@ -33,4 +33,7 @@ interface MeetingRepository : JpaRepository<Meeting, Long> {
     
     @Query("SELECT m FROM Meeting m JOIN Participant p ON m.id = p.meetingId WHERE p.userId = :userId")
     fun findMeetingsByParticipant(@Param("userId") userId: Long): List<Meeting>
+
+    @Query("SELECT COUNT(m) > 0 FROM Meeting m WHERE m.companyId = :companyId AND m.status IN ('IN_PROGRESS', 'SUBMITTED')")
+    fun existsActiveByCompanyId(@Param("companyId") companyId: Long): Boolean
 }

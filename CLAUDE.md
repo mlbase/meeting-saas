@@ -74,12 +74,41 @@ The application follows a clean layered architecture pattern:
 
 ## Domain Requirements
 
-Refer to `src/main/resources/static/domian-definition.md` for complete domain specifications including:
-- User management with company roles
-- Company management
-- Ticket system with GitHub integration
-- Meeting management
-- Action items linked to meetings and tickets
+Full spec: `src/main/resources/static/domian-definition.md`
+
+Bounded Contexts: **Identity** (User, Company) / **Meeting** (Meeting, VoiceProfile) / **Task** (ActionItem, Ticket, EpicStory)  
+Cross-BC references: ID only, no object references.
+
+### Key flows (already agreed)
+- Meeting: `SCHEDULED → IN_PROGRESS → SUBMITTED → BATCH_PROCESSING → COMPLETED` (C-level only creates)
+- ActionItem: `CANDIDATE → PICKED_UP → IN_PROGRESS → DEPLOY_WAITING → QA → RELEASED`
+- UserStatus: `AVAILABLE → PLANNING → WORKING → AVAILABLE`
+
+## Exception Strategy
+
+- `domain/exception/DomainException.kt` — business rule violations (`InvalidStateTransitionException`, `UnauthorizedActionException`, `DuplicateActiveMeetingException`)
+- `application/exception/ApplicationException.kt` — infra/use-case failures (`ResourceNotFoundException`, `AlreadyExistsException`)
+- Domain models throw domain exceptions only. Services throw application exceptions.
+
+## Development Style
+
+**TDD** — test skeleton first, then implement. Never write business logic without a failing test.
+
+## Work In Progress
+
+See `planning.md` for priority order and task checklist. Always follow it top to bottom.
+
+### What's done
+- Domain definition finalized (`domian-definition.md`)
+- Test skeletons written: `UserTest`, `UserStatusTest`, `MeetingTest`, `MeetingDomainServiceTest`, `ActionItemTest`
+
+### What's incomplete (needs implementation)
+- `ActionItem.kt`: wrong status enum (`PENDING/CANDIDATE/CONFIRMED/REJECTED` → should be `CANDIDATE/PICKED_UP/IN_PROGRESS/DEPLOY_WAITING/QA/RELEASED`), broken `pickUp` signature, missing methods (`startProgress`, `submitForDeploy`, `completeDeploy`, `completeQA`)
+- `User.kt`: missing `status: UserStatus` field (needed for `pickUp` validation)
+- `ActionItemTest.kt` line 58: `user=` arg incomplete — waiting on above fixes
+
+### Current task
+Implement `ActionItem.kt` domain logic to match test skeletons.
 
 ## Technology Stack
 
